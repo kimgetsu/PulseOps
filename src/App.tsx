@@ -17,12 +17,21 @@ export default function App() {
 
   const [currentItemId, setCurrentItemId] = useState<number | null>(null)
 
+  const [search, setSearch] = useState('')
+
+  const normalizedSearch = search.trim().toLowerCase()
+
   const filteredData = data.filter(item => {
-    return statusFilter === 'online' 
-      ? item.status === 'Онлайн'
-      : statusFilter === 'offline'
-        ? item.status === 'Офлайн'
-        : true
+    const normalizedTitle = item.title.trim().toLowerCase()
+    
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'online' && item.status === 'Онлайн') ||
+      (statusFilter === 'offline' && item.status === 'Офлайн')
+
+    const matchesSearch = normalizedTitle.includes(normalizedSearch)
+
+    return matchesStatus && matchesSearch
   })
 
   const selectedItem = filteredData.find(item => item.id === currentItemId)
@@ -46,32 +55,48 @@ export default function App() {
     }
   }
 
+  function handleChangeInputValue(event: ChangeEvent<HTMLInputElement>) {
+    setCurrentItemId(null)
+    setSearch(event.target.value)
+  }
+
   return (
     <>
       <h1>{title}</h1>
 
       <section>
         <h2>Список серверов</h2>
+
+        <label>
+          Поиск: <input value={search} onChange={handleChangeInputValue} type="text" />
+        </label>
+
         <select value={statusFilter} onChange={handleChangeStatusFilter}>
           <option value="all">Все</option>
           <option value="online">Онлайн</option>
           <option value="offline">Офлайн</option>
         </select>
-        <ul>
-          {filteredData.map(item => {
-            return (
-              <ServersListItem 
-                key={item.id}
-                itemId={item.id}
-                title={item.title}
-                status={item.status}
-                cpuUsage={item.cpuUsage}
-                memoryUsage={item.memoryUsage}
-                selectItem={handleSelectItem}
-              />
-            )
-          })}
-        </ul>
+
+        {
+          filteredData.length === 0 
+            ? <p>Серверы не найдены</p>
+            : <ul>
+                {filteredData.map(item => {
+                  return (
+                    <ServersListItem 
+                      key={item.id}
+                      itemId={item.id}
+                      title={item.title}
+                      status={item.status}
+                      cpuUsage={item.cpuUsage}
+                      memoryUsage={item.memoryUsage}
+                      selectItem={handleSelectItem}
+                    />
+                  )
+                })}
+              </ul>
+        }
+
         {
           selectedItem 
             ? <div>
