@@ -1,17 +1,46 @@
-import { useState, type ChangeEvent } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import './App.css'
 import ServersListItem from './components/ServersListItem'
+import { getServersList, type Server } from './api/servers'
 
 type StatusFilter = 'all' | 'online' | 'offline'
 
 export default function App() {
   const title = 'PulseOps'
 
-  const data = [
-    {id: 1, title: 'Сервер-1', status: 'Онлайн', cpuUsage: 53, memoryUsage: 64, description: 'Описание сервера под номером 1'},
-    {id: 2, title: 'Сервер-2', status: 'Онлайн', cpuUsage: 85, memoryUsage: 91, description: 'Описание сервера под номером 2'},
-    {id: 3, title: 'Сервер-3', status: 'Офлайн', cpuUsage: null, memoryUsage: null, description: null}
-  ]
+  const [servers, setServers] = useState<Server[]>([])
+
+  const [isLoading, setIsLoading] = useState(true)
+
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let ignoreResult = false
+
+    async function loadServers() {
+      try {
+        const data = await getServersList()
+
+        if (!ignoreResult) {
+          setServers(data)
+        }
+      } catch(err) {
+        if (!ignoreResult) {
+          setError(err instanceof Error ? err.message : 'Неизвестная ошибка')
+        }
+      } finally {
+        if (!ignoreResult) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadServers()
+
+    return () => {
+      ignoreResult = true
+    }
+  }, [])
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
@@ -21,7 +50,7 @@ export default function App() {
 
   const normalizedSearch = search.trim().toLowerCase()
 
-  const filteredData = data.filter(item => {
+  const filteredData = servers.filter(item => {
     const normalizedTitle = item.title.trim().toLowerCase()
     
     const matchesStatus =
@@ -78,23 +107,27 @@ export default function App() {
         </select>
 
         {
-          filteredData.length === 0 
-            ? <p>Серверы не найдены</p>
-            : <ul>
-                {filteredData.map(item => {
-                  return (
-                    <ServersListItem 
-                      key={item.id}
-                      itemId={item.id}
-                      title={item.title}
-                      status={item.status}
-                      cpuUsage={item.cpuUsage}
-                      memoryUsage={item.memoryUsage}
-                      selectItem={handleSelectItem}
-                    />
-                  )
-                })}
-              </ul>
+          isLoading
+            ? <p>Загрузка..</p>
+            : error !== null
+              ? <p>{error}</p>
+              : filteredData.length === 0 
+                ? <p>Серверы не найдены</p>
+                : <ul>
+                    {filteredData.map(item => {
+                      return (
+                        <ServersListItem 
+                          key={item.id}
+                          itemId={item.id}
+                          title={item.title}
+                          status={item.status}
+                          cpuUsage={item.cpuUsage}
+                          memoryUsage={item.memoryUsage}
+                          selectItem={handleSelectItem}
+                        />
+                      )
+                    })}
+                  </ul>
         }
 
         {
