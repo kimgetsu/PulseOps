@@ -8,7 +8,7 @@ type StatusFilter = 'all' | 'online' | 'offline'
 export default function App() {
   const title = 'PulseOps'
 
-  const { data: servers, isLoading, isError, error } = useServersQuery()
+  const { data: servers, isFetching, isLoading, isError, error, isRefetchError, refetch } = useServersQuery()
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
@@ -57,6 +57,10 @@ export default function App() {
     setSearch(event.target.value)
   }
 
+  function handleUpdateServersList() {
+    refetch()
+  }
+
   return (
     <>
       <h1>{title}</h1>
@@ -77,7 +81,7 @@ export default function App() {
         {
           isLoading
             ? <p>Загрузка..</p>
-            : isError
+            : isError && !servers
               ? <p>{error.message}</p>
               : filteredData.length === 0 
                 ? <p>Серверы не найдены</p>
@@ -96,6 +100,15 @@ export default function App() {
                       )
                     })}
                   </ul>
+        }
+        
+        <button onClick={handleUpdateServersList} type='button'>Обновить данные</button>
+        {
+          !isLoading && isFetching
+            ? <p>Обновляем..</p>
+            : isRefetchError
+              ? <p>{error.message}</p>
+              : null
         }
 
         {
