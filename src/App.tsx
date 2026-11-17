@@ -1,46 +1,14 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import './App.css'
 import ServersListItem from './components/ServersListItem'
-import { getServersList, type Server } from './api/servers'
+import { useServersQuery } from './hooks/useServersQuery'
 
 type StatusFilter = 'all' | 'online' | 'offline'
 
 export default function App() {
   const title = 'PulseOps'
 
-  const [servers, setServers] = useState<Server[]>([])
-
-  const [isLoading, setIsLoading] = useState(true)
-
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let ignoreResult = false
-
-    async function loadServers() {
-      try {
-        const data = await getServersList()
-
-        if (!ignoreResult) {
-          setServers(data)
-        }
-      } catch(err) {
-        if (!ignoreResult) {
-          setError(err instanceof Error ? err.message : 'Неизвестная ошибка')
-        }
-      } finally {
-        if (!ignoreResult) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    loadServers()
-
-    return () => {
-      ignoreResult = true
-    }
-  }, [])
+  const { data: servers, isLoading, isError, error } = useServersQuery()
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
@@ -50,7 +18,7 @@ export default function App() {
 
   const normalizedSearch = search.trim().toLowerCase()
 
-  const filteredData = servers.filter(item => {
+  const filteredData = servers?.filter(item => {
     const normalizedTitle = item.title.trim().toLowerCase()
     
     const matchesStatus =
@@ -61,7 +29,7 @@ export default function App() {
     const matchesSearch = normalizedTitle.includes(normalizedSearch)
 
     return matchesStatus && matchesSearch
-  })
+  }) ?? []
 
   const selectedItem = filteredData.find(item => item.id === currentItemId)
 
@@ -109,8 +77,8 @@ export default function App() {
         {
           isLoading
             ? <p>Загрузка..</p>
-            : error !== null
-              ? <p>{error}</p>
+            : isError
+              ? <p>{error.message}</p>
               : filteredData.length === 0 
                 ? <p>Серверы не найдены</p>
                 : <ul>
