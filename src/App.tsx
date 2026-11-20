@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, type ChangeEvent } from 'react'
 import './App.css'
 import ServersListItem from './components/ServersListItem'
