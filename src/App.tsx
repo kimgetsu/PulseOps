@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent } from 'react'
 import './App.css'
-import ServersListItem from './components/ServersListItem'
+import ServerListItem from './components/ServerListItem'
 import { useServersQuery } from './hooks/useServersQuery'
 
 type StatusFilter = 'all' | 'online' | 'offline'
@@ -13,8 +13,6 @@ export default function App() {
   const { data: servers, isFetching, isLoading, isError, error, isRefetchError, refetch } = useServersQuery()
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-
-  const [currentItemId, setCurrentItemId] = useState<number | null>(null)
 
   const [search, setSearch] = useState('')
 
@@ -33,8 +31,6 @@ export default function App() {
     return matchesStatus && matchesSearch
   }) ?? []
 
-  const selectedItem = filteredData.find(item => item.id === currentItemId)
-
   function isStatusFilter(value: string): value is StatusFilter {
     return value === 'all' || value === 'online' || value === 'offline'
   }
@@ -44,18 +40,10 @@ export default function App() {
 
     if (isStatusFilter(value)) {
       setStatusFilter(value)
-      setCurrentItemId(null)
-    }
-  }
-
-  function handleSelectItem(id: number) {
-    if (Number.isInteger(id)) {
-      setCurrentItemId(id)
     }
   }
 
   function handleChangeInputValue(event: ChangeEvent<HTMLInputElement>) {
-    setCurrentItemId(null)
     setSearch(event.target.value)
   }
 
@@ -90,14 +78,11 @@ export default function App() {
                 : <ul>
                     {filteredData.map(item => {
                       return (
-                        <ServersListItem 
+                        <ServerListItem 
                           key={item.id}
                           itemId={item.id}
                           title={item.title}
                           status={item.status}
-                          cpuUsage={item.cpuUsage}
-                          memoryUsage={item.memoryUsage}
-                          selectItem={handleSelectItem}
                         />
                       )
                     })}
@@ -111,15 +96,6 @@ export default function App() {
             : isRefetchError
               ? <p>{error.message}</p>
               : null
-        }
-
-        {
-          selectedItem 
-            ? <div>
-                <h2>Описание</h2>
-                <p>{selectedItem.description ? selectedItem.description : 'Описания нет'}</p>
-              </div>
-            : null
         }
       </section>
     </>

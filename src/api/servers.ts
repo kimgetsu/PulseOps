@@ -20,3 +20,8 @@ export async function getServersList(): Promise<Server[]> {
     return mockServers
 }
 
+export async function getServerById(id: number): Promise<Server | undefined> {
+    const servers = await getServersList()
+
+    return servers.find(server => server.id === id)
+}
